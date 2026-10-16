@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Heartline — find an AED fast</title>
+  <meta name="description" content="Find the nearest AED that is open right now, get hands-only CPR coaching, and see where your neighborhood has no AED coverage.">
+  <meta name="theme-color" content="#b3122e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 28s-11-6.6-11-15A6 6 0 0 1 16 9a6 6 0 0 1 11 4c0 8.4-11 15-11 15z" fill="currentColor"/><path d="M7 16h5l2-4 3 8 2-4h6" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      <div>
+        <h1>Heartline</h1>
+        <p class="tagline" data-i18n="app.tagline"></p>
+      </div>
+    </div>
+    <button id="langBtn" class="ghost" type="button" data-i18n="lang.toggle"></button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-emergency" aria-controls="panel-emergency" aria-selected="true" data-i18n="tab.emergency"></button>
+    <button role="tab" id="tab-map" aria-controls="panel-map" aria-selected="false" data-i18n="tab.map"></button>
+    <button role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false" data-i18n="tab.report"></button>
+    <button role="tab" id="tab-about" aria-controls="panel-about" aria-selected="false" data-i18n="tab.about"></button>
+  </nav>
+
+  <main id="main">
+    <!-- Emergency -->
+    <section id="panel-emergency" role="tabpanel" aria-labelledby="tab-emergency">
+      <a id="callBtn" class="big call" href="tel:911">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        <span id="callLabel"></span>
+      </a>
+      <p class="hint" data-i18n="em.callHint"></p>
+      <div class="row2">
+        <button id="findBtn" class="big find" type="button" data-i18n="em.find"></button>
+        <button id="cprBtn" class="big cpr" type="button" data-i18n="em.cpr"></button>
+      </div>
+
+      <div id="emStatus" class="status" role="status" aria-live="polite"></div>
+      <div id="advice" class="advice" role="alert" hidden></div>
+      <h2 id="resultsTitle" class="results-title" hidden></h2>
+      <ol id="results" class="results"></ol>
+      <details id="closedWrap" class="closed" hidden>
+        <summary id="closedTitle"></summary>
+        <ol id="closedList" class="results"></ol>
+      </details>
+
+      <div class="demo">
+        <label for="demoSel" data-i18n="em.demo"></label>
+        <select id="demoSel"></select>
+      </div>
+      <div id="emMap" class="map small" aria-label="Map of nearby AEDs"></div>
+    </section>
+
+    <!-- Neighborhood gaps -->
+    <section id="panel-map" role="tabpanel" aria-labelledby="tab-map" hidden>
+      <p class="intro" data-i18n="map.intro"></p>
+      <div class="controls">
+        <label>
+          <span data-i18n="map.when"></span>
+          <select id="whenDay"></select>
+        </label>
+        <label>
+          <span id="whenHourLabel"></span>
+          <input id="whenHour" type="range" min="0" max="23" step="1">
+        </label>
+        <label>
+          <span data-i18n="map.threshold"></span>
+          <select id="threshold"></select>
+        </label>
+        <label class="check">
+          <input id="includeLikely" type="checkbox">
+          <span data-i18n="map.includeLikely"></span>
+        </label>
+        <button id="analyzeBtn" class="primary" type="button" data-i18n="map.analyze"></button>
+      </div>
+      <div id="gapStatus" class="status" role="status" aria-live="polite"></div>
+      <div id="gapMap" class="map large" aria-label="Neighborhood AED coverage map"></div>
+      <ul class="legend">
+        <li><i class="sw covered"></i><span data-i18n="map.legendCovered"></span></li>
+        <li><i class="sw gap"></i><span data-i18n="map.legendGap"></span></li>
+        <li><i class="dot aed"></i><span data-i18n="map.legendAed"></span></li>
+        <li><i class="dot likely"></i><span data-i18n="map.legendLikely"></span></li>
+        <li><i class="dot suggest"></i><span data-i18n="map.legendSuggest"></span></li>
+      </ul>
+      <div id="gapResults" class="gap-results" hidden>
+        <p class="headline"><strong id="covPct"></strong> <span id="covText"></span></p>
+        <p id="countText" class="muted"></p>
+        <h3 data-i18n="map.profile"></h3>
+        <div id="profile" class="profile"></div>
+        <p id="worstText" class="muted"></p>
+        <h3 data-i18n="map.suggest"></h3>
+        <ol id="suggestions" class="suggestions"></ol>
+        <button id="printBtn" class="ghost" type="button" data-i18n="map.print"></button>
+      </div>
+    </section>
+
+    <!-- Report -->
+    <section id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden>
+      <p class="intro" data-i18n="rep.intro"></p>
+      <p><span data-i18n="rep.pick"></span> <button id="repLocBtn" class="link" type="button" data-i18n="rep.useLoc"></button></p>
+      <div id="repMap" class="map medium" aria-label="Map to place the AED"></div>
+      <form id="repForm" class="form" novalidate>
+        <label><span data-i18n="rep.place"></span><input name="place" autocomplete="off"></label>
+        <fieldset>
+          <legend data-i18n="rep.indoor"></legend>
+          <label class="radio"><input type="radio" name="indoor" value="yes"><span data-i18n="rep.inside"></span></label>
+          <label class="radio"><input type="radio" name="indoor" value="no"><span data-i18n="rep.outside"></span></label>
+          <label class="radio"><input type="radio" name="indoor" value="" checked><span data-i18n="rep.unsure"></span></label>
+        </fieldset>
+        <label><span data-i18n="rep.where"></span><input name="where" autocomplete="off"></label>
+        <fieldset>
+          <legend data-i18n="rep.hours"></legend>
+          <label class="radio"><input type="radio" name="hours" value="24/7"><span data-i18n="rep.h247"></span></label>
+          <label class="radio"><input type="radio" name="hours" value="building" checked><span data-i18n="rep.hBuilding"></span></label>
+          <label class="radio"><input type="radio" name="hours" value="custom"><span data-i18n="rep.hCustom"></span></label>
+          <input name="hoursText" data-i18n-placeholder="rep.hoursText" hidden>
+        </fieldset>
+        <fieldset>
+          <legend data-i18n="rep.access"></legend>
+          <label class="radio"><input type="radio" name="access" value="yes" checked><span data-i18n="rep.aPublic"></span></label>
+          <label class="radio"><input type="radio" name="access" value="customers"><span data-i18n="rep.aCustomers"></span></label>
+          <label class="radio"><input type="radio" name="access" value="private"><span data-i18n="rep.aPrivate"></span></label>
+        </fieldset>
+        <label><span data-i18n="rep.notes"></span><textarea name="notes" rows="2"></textarea></label>
+        <h3 data-i18n="rep.preview"></h3>
+        <pre id="repPreview" class="preview"></pre>
+        <div class="row-buttons">
+          <button id="repSubmit" class="primary" type="submit" data-i18n="rep.submit"></button>
+          <button id="repCopy" class="ghost" type="button" data-i18n="rep.copy"></button>
+          <a id="repOsm" class="ghost button" target="_blank" rel="noopener" data-i18n="rep.openOsm"></a>
+        </div>
+        <div id="repStatus" class="status" role="status" aria-live="polite"></div>
+      </form>
+      <h3 data-i18n="rep.mine"></h3>
+      <ul id="myReports" class="my-reports"></ul>
+    </section>
+
+    <!-- About -->
+    <section id="panel-about" role="tabpanel" aria-labelledby="tab-about" hidden>
+      <div id="aboutBody" class="prose"></div>
+      <p class="disclaimer" id="disclaimer"></p>
+    </section>
+  </main>
+
+  <!-- CPR coach overlay -->
+  <div id="cpr" class="cpr-overlay" role="dialog" aria-modal="true" aria-labelledby="cprTitle" hidden>
+    <h2 id="cprTitle" data-i18n="cpr.title"></h2>
+    <div class="pulse-wrap"><div id="pulse" class="pulse"><span>110</span><small>/min</small></div></div>
+    <p class="elapsed"><span data-i18n="cpr.elapsed"></span> <strong id="cprTime">0:00</strong></p>
+    <ol class="steps">
+      <li data-i18n="cpr.step1"></li>
+      <li data-i18n="cpr.step2"></li>
+      <li data-i18n="cpr.step3"></li>
+      <li data-i18n="cpr.step4"></li>
+    </ol>
+    <div class="row-buttons">
+      <a id="cprCall" class="big call slim" href="tel:911"></a>
+      <button id="cprMute" class="ghost light" type="button"></button>
+      <button id="cprStop" class="ghost light" type="button" data-i18n="cpr.close"></button>
+    </div>
+  </div>
+
+  <div id="printSheet" class="print-sheet" aria-hidden="true"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>

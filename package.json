@@ -1,0 +1,13 @@
+{
+  "name": "heartline",
+  "version": "1.0.0",
+  "description": "Find an AED fast, and see where your neighborhood has none.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "serve": "python3 -m http.server 8080",
+    "evidence": "node scripts/count_aeds.mjs"
+  }
+}

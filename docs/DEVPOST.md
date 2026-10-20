@@ -10,7 +10,7 @@ Heartline
 
 ## Elevator pitch
 
-Heartline finds the nearest AED that's actually open right now and coaches you through CPR until it arrives. It also shows neighbors exactly which blocks have no AED in reach at 2 AM, so they can fix it.
+Near Audubon Pond in Allen, Texas, the closest place that probably has an AED is a nine-minute round trip on foot. Heartline finds the nearest AED that's open right now, coaches you through CPR while someone runs for it, and shows neighbors exactly which blocks have no AED in reach, so they can fix it.
 
 ---
 
@@ -18,9 +18,11 @@ Heartline finds the nearest AED that's actually open right now and coaches you t
 
 **[YOU] Open with your neighborhood, in your own words.** You live near Audubon Pond in Allen, Texas, where a lot of older people live, and you've seen people die when they didn't get help quickly. Say what happened only as far as you're comfortable, and don't add details that aren't true.
 
-**What the data says.** Most people survive a cardiac arrest only if someone starts CPR and uses an AED before the ambulance arrives. In the national CARES registry, survival was **32.8%** when a bystander used an AED, versus **10.2%** overall. But bystanders used an AED in just **2.1%** of the cases where they could have. And **71.6%** of arrests happen at home, in neighborhoods, not in airports or malls.
+**Nine minutes.** That's the round trip on foot from Audubon Pond Way to the nearest place that *probably* has an AED, a fire station. When someone's heart stops, every minute counts: in one major study, the chance of surviving fell about **5.5 percentage points per minute** with no treatment ([Larsen 1993](https://doi.org/10.1016/S0196-0644(05)81302-2)).
 
-**Why bystanders don't use AEDs: they can't find them.** I wrote a script ([`npm run evidence`](../scripts/count_aeds.mjs)) that counts every AED on OpenStreetMap, the open map behind thousands of apps, in major US cities:
+**What the data says.** Survival depends heavily on what bystanders do before the ambulance arrives. In the national CARES registry, survival was **32.8%** when a bystander used an AED, versus **10.2%** overall. But bystanders used an AED in just **2.1%** of the cases where they could have. And **71.6%** of arrests happen at home, in neighborhoods, not in airports or malls.
+
+**Why bystanders don't use AEDs: they can't find them.** We wrote a script ([`npm run evidence`](../scripts/count_aeds.mjs)) that counts every AED on OpenStreetMap, the open map behind thousands of apps, in major US cities:
 
 | City | Population | AEDs on the open map |
 |---|---:|---:|
@@ -28,9 +30,9 @@ Heartline finds the nearest AED that's actually open right now and coaches you t
 | Dallas, TX | 1,304,379 | 0 |
 | Houston, TX | 2,304,580 | 20 |
 | Chicago, IL | 2,746,388 | 52 |
-| **[YOU] your city** | | |
+| **Allen, TX (our city)** | 104,627 | **0** |
 
-These cities have thousands of AEDs. They're just invisible. If you call 911 or open a map app, there's often no way to know the gym down the block has one.
+These cities do have AEDs, in schools, gyms, offices and police cars. They're just invisible. If you call 911 or open a map app, there's often no way to know the gym down the block has one.
 
 **[YOU] Who you talked to.** One or two real conversations make this much stronger. Easy ones to get before the deadline:
 - Your school nurse, athletic trainer or a coach: "Where are our AEDs? Can anyone get to them after hours? Are they on any map?"
@@ -71,10 +73,10 @@ Quote what they said, with their permission.
 
 ## Challenges we ran into
 
-- **The data I needed didn't exist.** I planned to show the nearest AED, then found that OpenStreetMap has zero AEDs in all of Virginia Beach and Dallas. Showing an empty list in an emergency would be useless. So I added "likely AED" places, labelled honestly, plus a way for neighbors to add real AEDs and fill the map in.
+- **The data we needed didn't exist.** We planned to show the nearest AED, then found that OpenStreetMap has zero AEDs in all of Virginia Beach and Dallas. Showing an empty list in an emergency would be useless. So we added "likely AED" places, labelled honestly, plus a way for neighbors to add real AEDs and fill the map in.
 - **Being honest under uncertainty.** It would have been easy to make coverage look good by assuming every AED is always available. Instead, unknown hours count as unavailable, "likely" sites stay off unless you turn them on, and every assumption is written in the About tab.
-- **Ranking.** My first version always put confirmed AEDs first, and then the app recommended an AED 18 minutes away over a fire station 3 minutes away. I switched to a time-plus-uncertainty penalty and wrote tests for both cases.
-- **Opening hours** are written many different ways ("Mo-Fr 08:00-17:00, Sa 09:00-12:00", "Su 22:00-02:00", "PH off"…). I wrote and tested a parser for the common forms.
+- **Ranking.** Our first version always put confirmed AEDs first, and then the app recommended an AED 18 minutes away over a fire station 3 minutes away. We switched to a time-plus-uncertainty penalty and wrote tests for both cases.
+- **Opening hours** are written many different ways ("Mo-Fr 08:00-17:00, Sa 09:00-12:00", "Su 22:00-02:00", "PH off"…). We wrote and tested a parser for the common forms.
 - **[YOU] add one challenge from your own experience building or testing it.**
 
 ## Accessibility

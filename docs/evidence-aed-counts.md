@@ -1,10 +1,11 @@
 # AEDs on the open map
 
-Counted 2026-10-19 from OpenStreetMap via the Overpass API (`emergency=defibrillator` inside each city's boundary).
+Counted 2026-10-20 from OpenStreetMap via the Overpass API (`emergency=defibrillator` inside each city's boundary).
 Reproduce with `npm run evidence`. Populations are 2020 US Census counts.
 
 | City | Population | AEDs mapped | Per 100,000 people |
 |---|---:|---:|---:|
+| Allen, Texas | 104,627 | 0 | 0.0 |
 | Virginia Beach, Virginia | 459,470 | 0 | 0.0 |
 | Dallas, Texas | 1,304,379 | 0 | 0.0 |
 | Houston, Texas | 2,304,580 | 20 | 0.9 |

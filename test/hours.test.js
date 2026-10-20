@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { parseOpeningHours, isOpenAt, isAlwaysOpen, scheduleFromRules } from "../src/lib/hours.js";
+import { parseOpeningHours, isOpenAt, isAlwaysOpen, scheduleFromRules, wallClockIn } from "../src/lib/hours.js";
 
 // 2024-01-01 is a Monday.
 const at = (dayOffset, h, m = 0) => new Date(2024, 0, 1 + dayOffset, h, m);
@@ -73,4 +73,23 @@ test("scheduleFromRules uses whole-hour defaults", () => {
   const s = scheduleFromRules([["Mo-Fr", 7, 16]]);
   assert.equal(isOpenAt(s, at(0, 7)), true);
   assert.equal(isOpenAt(s, at(0, 16)), false);
+});
+
+test("wallClockIn reads the time on a place's own clock", () => {
+  // 2024-01-02 03:00 UTC is Monday 9 PM in Chicago and Monday 7 PM in Seattle.
+  const instant = new Date(Date.UTC(2024, 0, 2, 3, 0));
+  const chicago = wallClockIn("America/Chicago", instant);
+  const seattle = wallClockIn("America/Los_Angeles", instant);
+  assert.deepEqual([chicago.getDay(), chicago.getHours()], [1, 21]);
+  assert.deepEqual([seattle.getDay(), seattle.getHours()], [1, 19]);
+  // A gym open until 20:00 is open in Seattle at that instant, closed in Chicago.
+  const gym = parseOpeningHours("Mo-Su 05:00-20:00");
+  assert.equal(isOpenAt(gym, seattle), true);
+  assert.equal(isOpenAt(gym, chicago), false);
+});
+
+test("wallClockIn falls back to the device clock without a valid zone", () => {
+  const d = new Date(2024, 0, 1, 12);
+  assert.equal(wallClockIn(null, d), d);
+  assert.equal(wallClockIn("Not/AZone", d), d);
 });

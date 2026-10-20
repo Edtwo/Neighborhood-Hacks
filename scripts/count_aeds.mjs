@@ -30,8 +30,8 @@ nwr["emergency"="defibrillator"](area.c);out count;`;
       body: new URLSearchParams({ data: q }),
       headers: { "User-Agent": "heartline-evidence/1.0" },
     });
-    if (res.status !== 429 && res.status !== 504) break;
-    await new Promise((r) => setTimeout(r, 15000 * (attempt + 1))); // rate-limited: back off
+    if (![429, 502, 503, 504].includes(res.status)) break;
+    await new Promise((r) => setTimeout(r, 5000 * 2 ** attempt)); // rate-limited: exponential back-off (5, 10, 20, 40 s)
   }
   if (!res.ok) throw new Error(`${city}: HTTP ${res.status}`);
   const json = await res.json();

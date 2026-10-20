@@ -30,13 +30,15 @@ And 71.6% of cardiac arrests happen at home (CARES), in residential neighborhood
 | **Neighborhood gaps** | Splits the map into 100 m squares weighted by residential streets. It shows which homes can get an AED back within your time limit **at the hour you choose**, plots coverage across the whole week, and picks the 24/7 places where an outdoor AED cabinet would close the most gap. The result prints as a one-page advocacy sheet for a city council, HOA or school board. |
 | **Add an AED** | Turns an AED you spotted into a public OpenStreetMap note with the right tags (`emergency=defibrillator`, `indoor`, `opening_hours`, `defibrillator:location`). Local mappers add it, and every app that uses OSM learns about it. |
 
-Example from a real run, Capitol Hill in Seattle, counting likely AED sites: **37% of homes are within a 4-minute AED round trip on a weekday morning, and 9% at 2 AM on Saturday.**
+Examples from real runs, counting likely AED sites:
+- **Audubon Pond, Allen, TX** (the built-in demo): zero confirmed AEDs mapped within 2.5 km, and **about 1% of homes are within a 4-minute AED round trip, at any hour.** Of the 16 places nearby that usually have an AED and are open at 3 PM, half have closed by dusk, and 2 are open at 2 AM.
+- **Capitol Hill, Seattle:** 37% of homes on a weekday morning, and 9% at 2 AM on Saturday.
 
 ## How it works
 
-- **Data:** live OpenStreetMap data from the Overpass API, falling back to a second mirror. The last result is cached on the device, so the app still answers with no signal.
+- **Data:** live OpenStreetMap data from the Overpass API, with all mirrors queried at once so the fastest answer wins (one 12 s timeout at worst). The last result is cached on the device, and the demo neighborhood's data ships with the app (`data/`, made by `scripts/snapshot.mjs`), so the app still answers with no signal or when the public servers are down.
 - **Open-now check:** a parser for OSM `opening_hours` ([src/lib/hours.js](src/lib/hours.js)). It handles ranges, split shifts, overnight hours, `off` rules and `24/7`. Anything it can't read is reported as "hours unknown", never guessed.
-- **Fetch time:** 2 × straight-line distance × 1.3 (streets aren't straight) ÷ 2 m/s, + 60 s to find an indoor AED or 20 s for an outdoor cabinet.
+- **Fetch time:** 2 × straight-line distance × 1.3 (streets aren't straight) ÷ 2 m/s, + 60 s to find an indoor AED or 20 s for an outdoor cabinet. With the default 4-minute limit, that puts an indoor AED within about 140 m (460 ft) straight-line, and an outdoor cabinet within about 170 m (560 ft). This is deliberately strict: it is what a real round trip on foot allows.
 - **Ranking:** round-trip time plus a penalty for uncertainty: +90 s for unknown hours, +120 s for a likely-but-unconfirmed site. A confirmed AED wins a close race, but a fire station 3 minutes away still beats a confirmed AED 15 minutes away.
 - **Gap analysis:** coverage is weighted by home density. It is computed for all 168 hours of the week, and AEDs with unknown hours count as unavailable, so coverage is never overstated. Cabinet sites are chosen greedily by newly covered homes. Greedy is the standard algorithm for this coverage problem and is guaranteed to get within 63% of the best possible choice ([src/lib/gaps.js](src/lib/gaps.js)).
 
@@ -48,9 +50,10 @@ Plain HTML, CSS and JavaScript (ES modules, no build step), [Leaflet](https://le
 
 ```bash
 npm run serve          # then open http://localhost:8080
-npm test               # 29 unit tests, no dependencies to install
+npm test               # 35 unit tests, no dependencies to install
 npm run evidence       # recount AEDs on OpenStreetMap per city
 node scripts/count_aeds.mjs "Your City" "Your State" 123456   # add your own city
+node scripts/snapshot.mjs allen-audubon-pond 33.1028 -96.7249 2500   # save a neighborhood's map data for offline use
 ```
 
 Geolocation needs `https://` or `localhost`. Any static host works (GitHub Pages, Netlify, Deployxa).
@@ -60,7 +63,7 @@ Geolocation needs `https://` or `localhost`. Any static host works (GitHub Pages
 - "Likely" sites and their typical hours are guesses by category. They are labelled as such everywhere.
 - Fetch times are straight-line estimates, not real routes.
 - Residential street density only roughly approximates where people live.
-- Opening hours are checked in the phone's local time zone, so demo places in other time zones use your clock.
+- Opening hours are checked on the phone's clock, except near the built-in demo cities, which use their own time zone. A place you pick by hand in another time zone still uses your clock.
 - Heartline is not a medical device. It does not replace calling 911 or learning CPR.
 
 ## Sources

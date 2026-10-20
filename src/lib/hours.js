@@ -107,6 +107,28 @@ export function weekdayIndex(date) {
   return (date.getDay() + 6) % 7;
 }
 
+// The current wall-clock time in an IANA time zone (e.g. "America/Los_Angeles"), as a Date
+// whose local fields read that time, so isOpenAt() can check a place on its own clock.
+// No zone, or one the browser doesn't know, means the device's own clock.
+export function wallClockIn(timeZone, date = new Date()) {
+  if (!timeZone) return date;
+  try {
+    const fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    });
+    const p = Object.fromEntries(fmt.formatToParts(date).map((x) => [x.type, x.value]));
+    return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+  } catch {
+    return date;
+  }
+}
+
 export function isOpenAt(schedule, date) {
   if (!schedule) return null;
   const minute = date.getHours() * 60 + date.getMinutes();

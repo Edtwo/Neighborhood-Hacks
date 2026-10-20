@@ -16,10 +16,7 @@ Heartline finds the nearest AED that's actually open right now and coaches you t
 
 ## What is the specific problem, and how do you know it's real?
 
-**[YOU] Open with the moment that made this real for you.** Prompts. Use whichever is true, and don't invent any of it:
-- Did you ever look for the AED at your school, gym, church or job? Did you know where it was? Is it locked in after hours?
-- Has anyone you know, or anyone in your community, had a cardiac arrest? (Only if you're comfortable sharing.)
-- Walk your own street or neighborhood this week and count the AEDs you can find that anyone could reach at night. Write down the number.
+**[YOU] Open with your neighborhood, in your own words.** You live near Audubon Pond in Allen, Texas, where a lot of older people live, and you've seen people die when they didn't get help quickly. Say what happened only as far as you're comfortable, and don't add details that aren't true.
 
 **What the data says.** Most people survive a cardiac arrest only if someone starts CPR and uses an AED before the ambulance arrives. In the national CARES registry, survival was **32.8%** when a bystander used an AED, versus **10.2%** overall. But bystanders used an AED in just **2.1%** of the cases where they could have. And **71.6%** of arrests happen at home, in neighborhoods, not in airports or malls.
 
@@ -41,7 +38,13 @@ These cities have thousands of AEDs. They're just invisible. If you call 911 or 
 - A firefighter or EMT you know, or your fire department's non-emergency line: "How long does an ambulance usually take in our neighborhood?"
 Quote what they said, with their permission.
 
-**[YOU] Your neighborhood's numbers.** Open the Neighborhood gaps tab on your own neighborhood and report two numbers: coverage on a weekday afternoon, and at 2 AM Saturday. (On Capitol Hill in Seattle, for example, it's 37% vs 9%, even when counting places that only *probably* have an AED.)
+**It gets worse after dark.** In a study of 4,789 cardiac arrests in Philadelphia, 30-day survival was **8.6% at night** (8 PM–8 AM) versus **10.9% in the day**, even after adjusting for other factors ([Wallace 2013](https://doi.org/10.1161/CIRCULATIONAHA.113.002058)). In England, only **34.3%** of public AEDs could be reached at night ([Deakin 2018](https://doi.org/10.1136/heartjnl-2018-312998)), because most are locked inside schools, offices and gyms.
+
+**My neighborhood's numbers (Audubon Pond, Allen, TX).** From OpenStreetMap data saved on 2026-10-20:
+- **Zero** confirmed AEDs are mapped within 2.5 km (1.5 miles) of Audubon Pond Way.
+- The closest place that *probably* has one is the fire station on West McDermott Drive. Fetching an AED from there and back is about a **9-minute** round trip on foot.
+- Even counting every place that probably has an AED, only about **1% of homes** in the neighborhood can get one back within 4 minutes, at any hour of the week.
+- Within 2.5 km, **16** places that usually have an AED are open at 3 PM, **8** at dusk (7 PM), and **2** at 2 AM (using typical hours for schools, churches and gyms).
 
 ---
 
@@ -58,13 +61,13 @@ Quote what they said, with their permission.
 ## How we built it
 
 - Plain HTML/CSS/JavaScript with ES modules and no build step, so it loads fast on old phones and anyone can read the code.
-- **Leaflet** + **OpenStreetMap** tiles for maps; the **Overpass API** for live AED and building data, with a backup server and an on-device cache for offline use.
+- **Leaflet** + **OpenStreetMap** tiles for maps; the **Overpass API** for live AED and building data, with backup servers queried in parallel and an on-device cache for offline use.
 - A custom parser for OSM's `opening_hours` format. It handles weekday ranges, split shifts, overnight hours and closed days. Anything it can't read is reported as "hours unknown", never guessed.
 - **Ranking:** estimated round-trip time plus a penalty for uncertainty (unknown hours, or an unconfirmed location). A confirmed AED wins a close race, but a fire station 3 minutes away still beats a confirmed AED 15 minutes away.
 - **Gap analysis:** a coverage model weighted by residential-street density (a free, works-everywhere proxy for homes), evaluated for every hour of the week. Cabinet suggestions use a greedy maximum-coverage algorithm, which is guaranteed to get within 63% of the best possible placement.
 - **Web Speech API** (voice prompts), **Web Audio** (metronome), **Vibration**, **Screen Wake Lock**, **Web Share**, **Geolocation**, and a **service worker** for offline use.
 - The **OSM Notes API** for community AED reports.
-- 29 unit tests with Node's built-in test runner, plus a reproducible data script that counts mapped AEDs per city.
+- 35 unit tests with Node's built-in test runner, plus a reproducible data script that counts mapped AEDs per city.
 
 ## Challenges we ran into
 

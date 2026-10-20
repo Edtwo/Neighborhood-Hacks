@@ -1,7 +1,8 @@
 import { makeT, detectLang } from "./lib/i18n.js";
 import { normalizeAll, rankForEmergency, adviceFor, directionsUrl, CABINET_HOSTS, isRestricted } from "./lib/aed.js";
-import { formatDistance, formatMinutes } from "./lib/geo.js";
-import { runQuery, nearbyQuery, nearbyCacheKey, areaQuery, splitAreaElements } from "./lib/overpass.js";
+import { formatDistance, formatMinutes, haversineMeters } from "./lib/geo.js";
+import { wallClockIn } from "./lib/hours.js";
+import { runQuery, nearbyQuery, nearbyCacheKey, areaQuery, splitAreaElements, snapshotNearby, snapshotArea } from "./lib/overpass.js";
 import { buildGrid, coverage, weeklyProfile, suggestCabinets, openAtFilter } from "./lib/gaps.js";
 import { CprCoach } from "./lib/cpr.js";
 import { tagsFor, noteText, noteUrl, submitNote } from "./lib/report.js";
@@ -25,11 +26,38 @@ const store = {
 };
 
 const DEMO_PLACES = [
-  { id: "chicago", label: "Chicago — The Loop", lat: 41.8826, lon: -87.6233 },
-  { id: "vb", label: "Virginia Beach — Oceanfront", lat: 36.8529, lon: -75.978 },
-  { id: "austin", label: "Austin — Downtown", lat: 30.2672, lon: -97.7431 },
-  { id: "seattle", label: "Seattle — Capitol Hill", lat: 47.6205, lon: -122.3212 },
+  {
+    id: "allen",
+    label: "Allen, TX — Audubon Pond",
+    lat: 33.1028,
+    lon: -96.7249,
+    timeZone: "America/Chicago",
+    snapshot: "data/allen-audubon-pond.json",
+  },
+  { id: "chicago", label: "Chicago — The Loop", lat: 41.8826, lon: -87.6233, timeZone: "America/Chicago" },
+  { id: "vb", label: "Virginia Beach — Oceanfront", lat: 36.8529, lon: -75.978, timeZone: "America/New_York" },
+  { id: "austin", label: "Austin — Downtown", lat: 30.2672, lon: -97.7431, timeZone: "America/Chicago" },
+  { id: "seattle", label: "Seattle — Capitol Hill", lat: 47.6205, lon: -122.3212, timeZone: "America/Los_Angeles" },
 ];
+
+// "Now" on the clock where the AEDs are. Near a demo city that is the city's time zone, so a
+// demo of Seattle from Texas shows what's open in Seattle; anywhere else it's the device clock.
+function placeNow(lat, lon) {
+  const demo = DEMO_PLACES.find((p) => haversineMeters(lat, lon, p.lat, p.lon) < 50000);
+  return wallClockIn(demo?.timeZone);
+}
+
+// Map data saved with the app for a demo neighborhood, so it still works when the public
+// servers are busy or there's no signal. Loaded only when a search is near that place.
+const snapshots = new Map();
+function snapshotNear(lat, lon) {
+  const demo = DEMO_PLACES.find((p) => p.snapshot && haversineMeters(lat, lon, p.lat, p.lon) < 5000);
+  if (!demo) return Promise.resolve(null);
+  if (!snapshots.has(demo.snapshot)) {
+    snapshots.set(demo.snapshot, fetch(demo.snapshot).then((r) => (r.ok ? r.json() : null)).catch(() => null));
+  }
+  return snapshots.get(demo.snapshot);
+}
 
 const state = {
   lang: detectLang(),
@@ -157,10 +185,16 @@ async function searchAt(lat, lon, source) {
   state.lastPoint = { lat, lon };
   store.set("lastPoint", state.lastPoint);
   setStatus("emStatus", t("em.loading"));
+  const snap = await snapshotNear(lat, lon);
   let res;
   try {
-    res = await runQuery(nearbyQuery(lat, lon, 1500), { cacheKey: nearbyCacheKey(lat, lon) });
+    // With saved data to fall back on, don't keep someone waiting on a busy server.
+    res = await runQuery(nearbyQuery(lat, lon, 1500), { cacheKey: nearbyCacheKey(lat, lon), timeoutMs: snap ? 5000 : 12000 });
   } catch {
+    const saved = snap && snapshotNearby(snap, lat, lon, 1500);
+    if (saved) res = { elements: saved, fromCache: true, savedAt: snap.savedAt };
+  }
+  if (!res) {
     $("advice").hidden = true;
     $("results").innerHTML = "";
     return setStatus("emStatus", t("em.error", { n: state.emergencyNumber }), true);
@@ -204,7 +238,7 @@ function cardHtml(r) {
 }
 
 function renderEmergency({ lat, lon, source, items, fromCache, savedAt }) {
-  const ranked = rankForEmergency(items, { lat, lon }, new Date());
+  const ranked = rankForEmergency(items, { lat, lon }, placeNow(lat, lon));
   const usable = ranked.filter((r) => r.status !== "closed");
   const closed = ranked.filter((r) => r.status === "closed");
   setStatus("emStatus", fromCache ? t("em.offline", { time: new Date(savedAt).toLocaleString(state.lang) }) : "");
@@ -327,7 +361,10 @@ function fillWhenControls() {
 
 function chosenDate() {
   const day = $("whenDay").value;
-  if (day === "now") return new Date();
+  if (day === "now") {
+    const c = gapMap?.getCenter();
+    return c ? placeNow(c.lat, c.lng) : new Date();
+  }
   const d = new Date(2024, 0, 1 + Number(day), Number($("whenHour").value), 30);
   return d;
 }
@@ -366,7 +403,16 @@ async function analyzeView() {
   $("analyzeBtn").disabled = true;
   try {
     const key = `area:${[bbox.south, bbox.west, bbox.north, bbox.east].map((v) => v.toFixed(3)).join(",")}`;
-    const res = await runQuery(areaQuery(bbox), { cacheKey: key, timeoutMs: 60000 });
+    const c = gapMap.getCenter();
+    const snap = await snapshotNear(c.lat, c.lng);
+    let res;
+    try {
+      res = await runQuery(areaQuery(bbox), { cacheKey: key, timeoutMs: snap ? 15000 : 60000 });
+    } catch (e) {
+      const saved = snap && snapshotArea(snap, bbox);
+      if (!saved) throw e;
+      res = { elements: saved, fromCache: true, savedAt: snap.savedAt };
+    }
     const { places, homes } = splitAreaElements(res.elements);
     const items = normalizeAll(places);
     const grid = buildGrid(bbox, homes, 100);
@@ -421,7 +467,7 @@ function renderAnalysis() {
   });
 
   // Text
-  const pct = (v) => `${Math.round(v * 100)}%`;
+  const pct = (v) => (v > 0 && v < 0.005 ? "<1%" : `${Math.round(v * 100)}%`);
   $("gapResults").hidden = false;
   $("covPct").textContent = pct(cov.share);
   $("covText").textContent = t("map.covered", { min: thresholdS / 60, when: whenLabel(date) });
@@ -471,7 +517,7 @@ function profileSvg(profile, markHour) {
 $("printBtn").addEventListener("click", () => {
   if (!lastAnalysis?.summary) return;
   const { cov, profile, worstDate, picks, total, date, thresholdS, bbox } = lastAnalysis.summary;
-  const pct = (v) => `${Math.round(v * 100)}%`;
+  const pct = (v) => (v > 0 && v < 0.005 ? "<1%" : `${Math.round(v * 100)}%`);
   const fmt = new Intl.DateTimeFormat(state.lang, { weekday: "long", hour: "numeric" });
   $("printSheet").innerHTML = `
     <h1>${t("map.sheetTitle")}</h1>

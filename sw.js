@@ -1,6 +1,6 @@
 // Offline support: the app shell is cached so the CPR coach and call button work with no signal.
 // Map data is cached separately by the app in localStorage.
-const VERSION = "heartline-v1";
+const VERSION = "heartline-v2";
 const SHELL = [
   "./",
   "index.html",
@@ -17,6 +17,7 @@ const SHELL = [
   "src/lib/i18n.js",
   "src/lib/overpass.js",
   "src/lib/report.js",
+  "data/allen-audubon-pond.json",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js",
 ];

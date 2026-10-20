@@ -95,7 +95,7 @@ No install, no account, no cost. Large buttons, high contrast, dark mode, screen
 
 ## Links
 
-- Live demo: **[TODO: GitHub Pages URL, once the repo is public]**
+- Live demo: https://edtwo.github.io/Neighborhood-Hacks/
 - Code: https://github.com/Edtwo/Neighborhood-Hacks
 - Video: **[TODO: YouTube/Vimeo URL]**
 

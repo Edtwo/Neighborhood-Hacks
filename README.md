@@ -2,6 +2,8 @@
 
 **Find an AED fast. Know where your neighborhood has none.**
 
+**Live demo:** https://edtwo.github.io/Neighborhood-Hacks/
+
 Heartline is a free web app for the first minutes of a cardiac arrest, and for the neighbors who want to make those minutes shorter. It works on any phone with no install and no account, in English and Spanish, and the CPR coach works offline.
 
 Neighborhood Hacks 2026 · Safety & Emergency Response track.

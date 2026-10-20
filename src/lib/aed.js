@@ -11,7 +11,9 @@ import { haversineMeters, roundTripSeconds } from "./geo.js";
 // Places that commonly host an AED, with typical hours used when OSM has none.
 // Hours are assumptions and are always shown to the user as "typical hours".
 export const LIKELY_HOSTS = {
-  fire_station: { rules: [["Mo-Su", 0, 24]], weight: 3 },
+  // A station's AED is usually in the lobby, which is locked after hours, and crews leave on calls.
+  // A local fire department confirmed this for their station near our demo neighborhood in Oct 2026.
+  fire_station: { rules: [["Mo-Fr", 8, 17]], weight: 3 },
   police: { rules: [["Mo-Su", 0, 24]], weight: 3 },
   fitness_centre: { rules: [["Mo-Su", 5, 22]], weight: 3 },
   sports_centre: { rules: [["Mo-Su", 6, 22]], weight: 2 },

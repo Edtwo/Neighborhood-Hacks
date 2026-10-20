@@ -60,7 +60,7 @@ test("a likely host next to a mapped AED is not listed twice", () => {
 
 test("ranking: confirmed AEDs win close races, a much closer likely AED wins, closed goes last", () => {
   const items = normalizeAll([
-    node(20, 41.8830, -87.6278, { amenity: "fire_station" }), // ~120 m, likely, 24/7
+    node(20, 41.8830, -87.6278, { amenity: "police" }), // ~120 m, likely, 24/7
     node(21, 41.8860, -87.6278, { emergency: "defibrillator", opening_hours: "24/7" }), // ~450 m
     node(22, 41.8820, -87.6278, { emergency: "defibrillator", opening_hours: "Mo-Fr 09:00-17:00" }), // closed at 2am
     node(23, 41.8900, -87.6278, { emergency: "defibrillator", indoor: "yes" }), // ~900 m, unknown hours
@@ -73,10 +73,16 @@ test("ranking: confirmed AEDs win close races, a much closer likely AED wins, cl
 
   // A confirmed open AED only slightly farther than a likely one still wins.
   const close = normalizeAll([
-    node(30, 41.8830, -87.6278, { amenity: "fire_station" }),
+    node(30, 41.8830, -87.6278, { amenity: "police" }),
     node(31, 41.8833, -87.6278, { emergency: "defibrillator", opening_hours: "24/7" }),
   ]);
   assert.equal(rankForEmergency(close, origin, mondayNight)[0].id, "node/31");
+});
+
+test("a fire station's lobby AED counts as closed at night", () => {
+  const [station] = normalizeAll([node(40, 41.8830, -87.6278, { amenity: "fire_station" })]);
+  assert.equal(statusAt(station, mondayNoon), "open");
+  assert.equal(statusAt(station, mondayNight), "closed");
 });
 
 test("advice depends on round-trip time and availability", () => {

@@ -28,6 +28,7 @@ export const ABOUT = {
 <ul>
   <li>Fetch time = 2 × straight-line distance × 1.3 (streets aren't straight) ÷ 2 m/s (hurried walk), + 60 s to find an indoor AED or 20 s for an outdoor cabinet. Real routes vary.</li>
   <li>"Likely" places and their typical hours are guesses by category. They are never shown as confirmed. The gap analysis leaves them out unless you turn them on.</li>
+  <li>Fire stations count as reachable only on weekday business hours: their AED is usually in the lobby, which is locked after hours while crews are out on calls.</li>
   <li>An AED with unknown hours counts as <em>unavailable</em> in the gap analysis, so coverage is never overstated.</li>
   <li>Residential street density is only a rough stand-in for where people live.</li>
 </ul>
@@ -53,6 +54,7 @@ ${SETTINGS_EN}`,
 <ul>
   <li>Tiempo de ida y vuelta = 2 × distancia en línea recta × 1.3 ÷ 2 m/s, + 60 s para encontrar un DEA interior o 20 s si es exterior.</li>
   <li>Los lugares "probables" y sus horarios típicos son estimaciones por categoría. Nunca se muestran como confirmados.</li>
+  <li>Las estaciones de bomberos cuentan como accesibles solo en horario laboral entre semana: su DEA suele estar en el vestíbulo, que se cierra fuera de horario mientras el equipo atiende llamadas.</li>
   <li>Un DEA con horario desconocido cuenta como <em>no disponible</em> en el análisis, para no exagerar la cobertura.</li>
 </ul>
 
